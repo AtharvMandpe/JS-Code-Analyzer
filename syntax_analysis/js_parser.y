@@ -22,14 +22,14 @@ ASTNode *root;
     ASTNode *node; 
 }
 
-%token FUNCTION VAR IF ELSE RETURN
+%token FUNCTION VAR IF ELSE WHILE RETURN
 %token <num> NUMBER
 %token <str> IDENTIFIER
 %token ASSIGN PLUS MINUS MULTIPLY DIVIDE
 %token EQUALITY LESS_THAN GREATER_THAN LESS_EQUAL GREATER_EQUAL
 %token LBRACE RBRACE LPAREN RPAREN SEMICOLON
 
-%type <node> program function_def statement statement_list expression if_statement if_else_statement 
+%type <node> program function_def statement statement_list expression if_statement if_else_statement while_statement
 
 %left PLUS MINUS
 %left MULTIPLY DIVIDE
@@ -74,6 +74,12 @@ if_else_statement:
         $$ = new_node("IfElse", ifCondition, new_node("Else", ifStatements, elseStatements));
     }
 
+while_statement:
+    WHILE LPAREN expression RPAREN LBRACE statement_list RBRACE
+    {
+        $$ = new_node("While", $3, $6);
+    }
+    ;
 
 statement:
     VAR IDENTIFIER ASSIGN expression SEMICOLON
@@ -81,13 +87,20 @@ statement:
         $$ = new_node("VarDecl", new_node($2, NULL, NULL), $4);
         free($2);
     }
-    | expression SEMICOLON { $$ = $1; }
+    | IDENTIFIER ASSIGN expression SEMICOLON
+    {
+        $$ = new_node("Assignment", new_node($1, NULL, NULL), $3);
+        free($1);
+    }
+    | expression SEMICOLON 
+    { 
+        $$ = new_node("Expression", $1, NULL); 
+    }
     | if_statement
     | if_else_statement
+    | while_statement
     | error SEMICOLON { $$ = NULL; }
     ;
-
-
 
 expression:
     expression PLUS expression
@@ -134,7 +147,6 @@ expression:
         $$ = new_node(buffer, NULL, NULL);
     }
     ;
-
 
 %%
 
